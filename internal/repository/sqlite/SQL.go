@@ -16,7 +16,7 @@ type SQL struct {
 }
 
 func openDataBase() *sql.DB {
-	db, err := sql.Open("sqlite3", "internal/sqlite/StorageData.db")
+	db, err := sql.Open("sqlite3", "internal/repository/sqlite/StorageData.db")
 	if err != nil {
 		log.Error(err.Error())
 	}
