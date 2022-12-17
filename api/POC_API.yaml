@@ -37,7 +37,7 @@ paths:
             summary: 'Login a user to get token'
             responses:
                 '200':
-                    description: 'User has been logged in'
+                    description: 'entity has been logged in'
                     content: jwt-token
                 '400':
                     description: 'Login or password are incorrect or not provided'
@@ -49,7 +49,7 @@ paths:
             summary: 'Change login of user'
             responses:
                 '200':
-                    description: 'User login has been successfuly changed'
+                    description: 'entity login has been successfuly changed'
                 '406':
                     description: 'Provided token is not valid'
                 '500':
@@ -60,7 +60,7 @@ paths:
             summary: 'Change password of user'
             responses:
                 '200':
-                    description: 'User password has been changed'
+                    description: 'entity password has been changed'
                 '406':
                     description: 'Provided token is not valid'
                 '500':

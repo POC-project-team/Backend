@@ -1,8 +1,7 @@
-// Package service /* logic for requesting */
-package service
+package request
 
 import (
-	"backend/pkg/APIerror"
+	"backend/internal/controller/rest/APIerror"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -30,6 +29,7 @@ func toHash(passwd string) string {
 
 // Bind read body of request, return error when exist
 func (req *Request) Bind(w http.ResponseWriter, r *http.Request) error {
+	//goland:noinspection ALL
 	content, err := ioutil.ReadAll(r.Body)
 	defer func(Body io.ReadCloser) {
 		if err = Body.Close(); err != nil {

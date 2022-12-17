@@ -1,11 +1,8 @@
-// Package user /* for user data structure */
 package user
 
 import (
 	"strings"
 )
-
-// struct for tag and working with it
 
 type Tag struct {
 	//UserID int

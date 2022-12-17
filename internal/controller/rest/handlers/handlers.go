@@ -1,19 +1,25 @@
-// Package server /* for setting up a server */
-package server
+package handlers
 
 import (
-	"backend/pkg/APIerror"
-	au "backend/pkg/Auth"
-	service "backend/pkg/Service"
+	"backend/internal/controller/rest/APIerror"
+	db "backend/internal/repository/sqlite"
+	au "backend/internal/service/auth"
+	service "backend/internal/service/userService"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
 // MyHandler defines the routes, returns router
-func MyHandler() *mux.Router {
-	srv := service.NewService()
+func MyHandler(database *db.SQL) *mux.Router {
+	srv := service.NewService(database)
 	router := mux.NewRouter()
 
+	Routes(router, srv)
+	router.Handle("/", router)
+	return router
+}
+
+func Routes(router *mux.Router, srv *service.Service) {
 	// routers for users and auth
 	router.HandleFunc("/users", srv.GetAllUsers).Methods("GET")
 	router.HandleFunc("/signup", srv.CreateUser).Methods("POST")
@@ -44,6 +50,4 @@ func MyHandler() *mux.Router {
 			})
 		}
 	}).Methods("GET")
-	router.Handle("/", router)
-	return router
 }

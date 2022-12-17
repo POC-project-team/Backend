@@ -1,9 +1,9 @@
-package Auth
+package auth
 
 import (
-	"backend/pkg/APIerror"
-	"backend/pkg/DB"
-	service "backend/pkg/Service"
+	"backend/internal/controller/rest/APIerror"
+	service "backend/internal/controller/rest/request"
+	"backend/internal/repository/sqlite"
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	log "github.com/sirupsen/logrus"
@@ -34,7 +34,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserID, err := DB.NewSQLDataBase().GetUserID(response.Login, response.Password)
+	UserID, err := sqlite.NewSQLDataBase().GetUserID(response.Login, response.Password)
 	if err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
@@ -88,7 +88,7 @@ func ChangeLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := DB.NewSQLDataBase().ChangeLogin(response.UserID, response.Login); err != nil {
+	if err := sqlite.NewSQLDataBase().ChangeLogin(response.UserID, response.Login); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -115,7 +115,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := DB.NewSQLDataBase().ChangePassword(response.UserID, response.Password); err != nil {
+	if err := sqlite.NewSQLDataBase().ChangePassword(response.UserID, response.Password); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),

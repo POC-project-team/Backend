@@ -1,4 +1,3 @@
-// Package APIerror /* for managing error that occurs while working with request */
 package APIerror
 
 import (

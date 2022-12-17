@@ -1,10 +1,10 @@
-// Package service /* logic for requesting */
-package service
+package userService
 
 import (
-	"backend/pkg/APIerror"
-	db "backend/pkg/DB"
-	u "backend/pkg/User"
+	"backend/internal/controller/rest/APIerror"
+	"backend/internal/controller/rest/request"
+	u "backend/internal/entity"
+	db "backend/internal/repository/sqlite"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -14,9 +14,10 @@ type Service struct {
 	BaseSQL db.SQL
 }
 
-func NewService() *Service {
+func NewService(database *db.SQL) *Service {
 	return &Service{
-		*db.NewSQLDataBase(),
+		BaseSQL: *database,
+		//*db.NewSQLDataBase(),
 	}
 }
 
@@ -50,7 +51,7 @@ func (s *Service) GetAllUsers(w http.ResponseWriter, _ *http.Request) {
 
 // CreateUser handler for creating new user
 func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var req Request
+	var req request.Request
 	if req.Bind(w, r) != nil {
 		return
 	}
@@ -93,7 +94,7 @@ func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 	var (
 		tags []db.TagNoUserNotes
-		req  Request
+		req  request.Request
 		err  error
 	)
 	if req.ParseToken(w, r) != nil {
@@ -121,7 +122,7 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 	var (
 		resp db.TagNoUserNotes
-		req  Request
+		req  request.Request
 		err  error
 	)
 	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
@@ -164,7 +165,7 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		req  Request
+		req  request.Request
 		resp db.TagNoUserNotes
 		err  error
 	)
@@ -212,7 +213,7 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 	}
 	var (
 		resp response
-		req  Request
+		req  request.Request
 		err  error
 	)
 	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
@@ -255,7 +256,7 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) DeleteTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		req Request
+		req request.Request
 		err error
 	)
 	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
@@ -292,7 +293,7 @@ func (s *Service) DeleteTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		req Request
+		req request.Request
 		err error
 	)
 	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
@@ -329,7 +330,7 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 
 // GetNotes handler for getting notes for specific tag of user
 func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
-	var req Request
+	var req request.Request
 	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
@@ -357,7 +358,7 @@ func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
 
 // AddNote handler for creating new note for specific tag of user
 func (s *Service) AddNote(w http.ResponseWriter, r *http.Request) {
-	var req Request
+	var req request.Request
 	// param checking
 	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return

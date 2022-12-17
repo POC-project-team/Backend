@@ -1,7 +1,8 @@
-// Package server /* for setting up a server */
 package server
 
 import (
+	"backend/internal/controller/rest/handlers"
+	db "backend/internal/repository/sqlite"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"net/http"
@@ -17,8 +18,8 @@ type myServer struct {
 	reqCount    uint32
 }
 
-// NewServer constructor for Server
-func NewServer() *myServer {
+// NewServer constructor for server
+func NewServer(database *db.SQL) *myServer {
 	myRouter := &myServer{
 		Server: http.Server{
 			Addr:         "0.0.0.0:60494", //it's going to be redone
@@ -27,7 +28,7 @@ func NewServer() *myServer {
 		},
 	}
 
-	myRouter.Handler = MyHandler()
+	myRouter.Handler = handlers.MyHandler(database)
 
 	return myRouter
 }

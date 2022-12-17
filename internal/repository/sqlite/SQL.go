@@ -1,7 +1,7 @@
-package DB
+package sqlite
 
 import (
-	u "backend/pkg/User"
+	u "backend/internal/entity"
 	"database/sql"
 	"errors"
 	"strconv"
@@ -16,7 +16,7 @@ type SQL struct {
 }
 
 func openDataBase() *sql.DB {
-	db, err := sql.Open("sqlite3", "pkg/DB/StorageData.db")
+	db, err := sql.Open("sqlite3", "internal/repository/sqlite/StorageData.db")
 	if err != nil {
 		log.Error(err.Error())
 	}
