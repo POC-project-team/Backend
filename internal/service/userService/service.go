@@ -15,9 +15,10 @@ type Service struct {
 	BaseSQL db.SQL
 }
 
-func NewService() *Service {
+func NewService(database *db.SQL) *Service {
 	return &Service{
-		*db.NewSQLDataBase(),
+		BaseSQL: *database,
+		//*db.NewSQLDataBase(),
 	}
 }
 
