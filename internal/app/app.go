@@ -2,11 +2,13 @@ package app
 
 import (
 	s "backend/internal/controller/rest/server"
+	db "backend/internal/repository/sqlite"
 	log "github.com/sirupsen/logrus"
 )
 
 func Run() {
-	server := s.NewServer()
+	database := db.NewSQLDataBase()
+	server := s.NewServer(database)
 	log.Info("The server is up and running at ", server.Addr, "\n")
 
 	// signal handler for correct shutdown

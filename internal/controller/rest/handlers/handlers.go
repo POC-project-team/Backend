@@ -1,4 +1,3 @@
-// Package server /* for setting up a server */
 package handlers
 
 import (
@@ -11,11 +10,10 @@ import (
 )
 
 // MyHandler defines the routes, returns router
-func MyHandler() *mux.Router {
-	database := db.NewSQLDataBase()
+func MyHandler(database *db.SQL) *mux.Router {
 	srv := service.NewService(database)
 	router := mux.NewRouter()
-	//router = Routes(router)
+
 	Routes(router, srv)
 	router.Handle("/", router)
 	return router

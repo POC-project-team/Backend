@@ -1,4 +1,3 @@
-// Package service /* logic for requesting */
 package userService
 
 import (

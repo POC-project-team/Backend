@@ -1,4 +1,3 @@
-// Package user /* for user data structure */
 package user
 
 import (
