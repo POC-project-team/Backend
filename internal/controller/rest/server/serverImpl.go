@@ -2,6 +2,7 @@
 package server
 
 import (
+	"backend/internal/controller/rest/handlers"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"net/http"
@@ -17,7 +18,7 @@ type myServer struct {
 	reqCount    uint32
 }
 
-// NewServer constructor for Server
+// NewServer constructor for server
 func NewServer() *myServer {
 	myRouter := &myServer{
 		Server: http.Server{
@@ -27,7 +28,7 @@ func NewServer() *myServer {
 		},
 	}
 
-	myRouter.Handler = MyHandler()
+	myRouter.Handler = handlers.MyHandler()
 
 	return myRouter
 }

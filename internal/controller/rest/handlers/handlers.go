@@ -1,10 +1,10 @@
 // Package server /* for setting up a server */
-package server
+package handlers
 
 import (
-	"backend/pkg/APIerror"
-	au "backend/pkg/Auth"
-	service "backend/pkg/Service"
+	"backend/internal/controller/rest/APIerror"
+	au "backend/internal/service/auth"
+	service "backend/internal/service/userService"
 	"github.com/gorilla/mux"
 	"net/http"
 )

@@ -2,7 +2,7 @@
 package main
 
 import (
-	s "backend/pkg/Server"
+	s "backend/internal/controller/rest/server"
 	log "github.com/sirupsen/logrus"
 )
 

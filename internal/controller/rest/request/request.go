@@ -1,8 +1,8 @@
 // Package service /* logic for requesting */
-package service
+package request
 
 import (
-	"backend/pkg/APIerror"
+	"backend/internal/controller/rest/APIerror"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
