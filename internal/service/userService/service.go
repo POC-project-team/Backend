@@ -70,7 +70,7 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 		req  request.Request
 		err  error
 	)
-	if req.ParseToken(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil {
 		return
 	}
 
@@ -95,7 +95,7 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 		req  request.Request
 		err  error
 	)
-	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -139,7 +139,7 @@ func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 		resp responseDto.TagNoUserNotes
 		err  error
 	)
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -186,7 +186,7 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 		req  request.Request
 		err  error
 	)
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -229,7 +229,7 @@ func (s *Service) DeleteTag(w http.ResponseWriter, r *http.Request) {
 		req request.Request
 		err error
 	)
-	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -266,7 +266,7 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 		req request.Request
 		err error
 	)
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -301,7 +301,7 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 // GetNotes handler for getting notes for specific tag of user
 func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
 	var req request.Request
-	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -330,7 +330,7 @@ func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
 func (s *Service) AddNote(w http.ResponseWriter, r *http.Request) {
 	var req request.Request
 	// param checking
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 

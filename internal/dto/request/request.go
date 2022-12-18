@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
@@ -78,9 +77,7 @@ func (req *Request) ParseTagID(w http.ResponseWriter, r *http.Request) error {
 }
 
 // ParseToken needed to parse the userId from request header if it exists
-func (req *Request) ParseToken(w http.ResponseWriter, r *http.Request) error {
-	data := &Claims{}
-
+func (req *Request) BindAndParseToken(w http.ResponseWriter, r *http.Request) error {
 	tokenString := mux.Vars(r)["token"]
 
 	if tokenString == "" {
@@ -91,35 +88,11 @@ func (req *Request) ParseToken(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("no token provided")
 	}
 
-	tkn, err := jwt.ParseWithClaims(tokenString, data,
-		func(t *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
-		},
-	)
-
+	token, err := ParseToken(tokenString)
 	if err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   406,
-			Description: "The token has expired",
-		})
 		return err
 	}
 
-	if !tkn.Valid {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusUnauthorized,
-			Description: "The token has expired, login again",
-		})
-		return err
-	}
-
-	req.UserID = data.UserId
+	req.UserID = token.UserId
 	return nil
-}
-
-var jwtKey = []byte("secret_key__DO_NOT_POST_IT_TO_GITHUB")
-
-type Claims struct {
-	UserId int `json:"userID"`
-	jwt.StandardClaims
 }

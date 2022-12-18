@@ -2,14 +2,12 @@ package auth
 
 import (
 	"backend/internal/controller/rest/APIerror"
-	service "backend/internal/dto/request"
+	"backend/internal/dto/request"
 	"backend/internal/dto/request/userRequest"
 	"backend/internal/repository/postgres"
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"time"
 )
 
 type Service struct {
@@ -18,17 +16,6 @@ type Service struct {
 
 func NewAuthService(db *postgres.Client) *Service {
 	return &Service{db: db}
-}
-
-var jwtKey = []byte("secret_key__DO_NOT_POST_IT_TO_GITHUB")
-
-type Claims struct {
-	UserId int `json:"userID"`
-	jwt.StandardClaims
-}
-
-type Token struct {
-	JWTToken string `json:"token"`
 }
 
 // Auth generates the token for the user
@@ -47,17 +34,7 @@ func (s *Service) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := Claims{
-		UserId: UserID,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 48).Unix(),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	var answer Token
-	answer.JWTToken, err = token.SignedString(jwtKey)
+	answer, err := request.GenerateToken(UserID)
 	if err != nil {
 		APIerror.Error(w, err)
 		return
@@ -72,13 +49,9 @@ func (s *Service) Auth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) ChangeLogin(w http.ResponseWriter, r *http.Request) {
-	var response service.Request
+	var response userRequest.ChangeLoginRequest
 
-	if response.ParseToken(w, r) != nil {
-		return
-	}
-
-	if err := response.Bind(w, r); err != nil {
+	if err := response.Bind(r); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
@@ -93,14 +66,9 @@ func (s *Service) ChangeLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	var response service.Request
+	var response userRequest.ChangePasswdRequest
 
-	if response.ParseToken(w, r) != nil {
-		return
-	}
-
-	if err := response.Bind(w, r); err != nil {
-		APIerror.Error(w, err)
+	if response.Bind(r) != nil {
 		return
 	}
 

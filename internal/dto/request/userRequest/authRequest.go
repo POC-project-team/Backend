@@ -20,6 +20,7 @@ func toHash(passwd string) string {
 }
 
 func (a *AuthRequest) Bind(r *http.Request) error {
+	//goland:noinspection ALL
 	buff, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return err
