@@ -2,7 +2,7 @@ package server
 
 import (
 	"backend/internal/controller/rest/handlers"
-	db "backend/internal/repository/sqlite"
+	"backend/internal/repository/postgres"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"net/http"
@@ -19,7 +19,7 @@ type myServer struct {
 }
 
 // NewServer constructor for server
-func NewServer(database *db.SQL) *myServer {
+func NewServer(database *postgres.Client) *myServer {
 	myRouter := &myServer{
 		Server: http.Server{
 			Addr:         "0.0.0.0:60494", //it's going to be redone

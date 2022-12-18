@@ -3,7 +3,7 @@ package auth
 import (
 	"backend/internal/controller/rest/APIerror"
 	service "backend/internal/controller/rest/request"
-	"backend/internal/repository/sqlite"
+	"backend/internal/repository/postgres"
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	log "github.com/sirupsen/logrus"
@@ -34,7 +34,14 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserID, err := sqlite.NewSQLDataBase().GetUserID(response.Login, response.Password)
+	//UserID, err := sqlite.NewSQLDataBase().GetUserID(response.Login, response.Password)
+	db, err := postgres.NewClient()
+	if err != nil {
+		log.Error(err)
+	}
+	defer db.Close()
+	UserID, err := db.GetUserID(response.Login, response.Password)
+
 	if err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
@@ -88,7 +95,18 @@ func ChangeLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := sqlite.NewSQLDataBase().ChangeLogin(response.UserID, response.Login); err != nil {
+	db, err := postgres.NewClient()
+	if err != nil {
+		log.Error(err)
+	}
+	defer func(db *postgres.Client) {
+		err := db.Close()
+		if err != nil {
+
+		}
+	}(db)
+	if err := db.ChangeLogin(response.UserID, response.Login); err != nil {
+		//if err := sqlite.NewSQLDataBase().ChangeLogin(response.UserID, response.Login); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -115,7 +133,12 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := sqlite.NewSQLDataBase().ChangePassword(response.UserID, response.Password); err != nil {
+	db, err := postgres.NewClient()
+	if err != nil {
+		log.Error(err)
+	}
+	if err := db.ChangePassword(response.UserID, response.Password); err != nil {
+		//if err := sqlite.NewSQLDataBase().ChangePassword(response.UserID, response.Password); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),

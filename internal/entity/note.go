@@ -5,8 +5,8 @@ import (
 )
 
 type Note struct {
-	Note string    `json:"note"`
-	Time time.Time `json:"time"`
+	Note string    `json:"note" gorm:"column:note"`
+	Time time.Time `json:"time" gorm:"column:time"`
 }
 
 // NewNote constructor for struct note
