@@ -11,6 +11,6 @@ type Tag struct {
 type Note struct {
 	UserId uint      `gorm:"references:UserID"`
 	TagID  string    `gorm:"references:TagID"`
-	Note   string    `gorm:"column:note"`
+	Note   string    `json:"note" gorm:"column:note"`
 	Time   time.Time `gorm:"column:time"`
 }

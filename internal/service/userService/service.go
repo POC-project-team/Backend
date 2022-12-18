@@ -3,10 +3,10 @@ package userService
 import (
 	"backend/internal/controller/rest/APIerror"
 	"backend/internal/dto/request"
+	"backend/internal/dto/request/noteRequest"
 	"backend/internal/dto/request/tagRequest"
 	"backend/internal/dto/request/userRequest"
 	"backend/internal/dto/responseDto"
-	u "backend/internal/entity"
 	"backend/internal/repository/postgres"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
@@ -170,73 +170,43 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) DeleteTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		req request.Request
-		err error
+		req tagRequest.DeleteTagRequest
 	)
-	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	if req.TagID == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No tag id provided",
-		})
-		return
-	}
-
-	if err = s.db.DeleteTag(req.UserID, req.TagID); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+	if err := s.db.DeleteTag(req.Token.UserId, req.TagID); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	resp := "Tag deleted"
 
-	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		APIerror.Error(w, err)
 	} else {
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
-	var (
-		req request.Request
-		err error
-	)
-	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	var req tagRequest.TransferTagRequest
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	if req.TagID == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No tag id provided",
-		})
-		return
-	}
-
-	if err = s.db.TransferTag(req.UserID, req.TagID, req.Login); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+	if err := s.db.TransferTag(req.Token.UserId, req.TagID, req.Login); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	resp := "Tag was transferred"
 
-	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		APIerror.Error(w, err)
 	} else {
 		w.WriteHeader(http.StatusCreated)
 	}
@@ -244,27 +214,21 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 
 // GetNotes handler for getting notes for specific tag of user
 func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
-	var req request.Request
-	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	var req noteRequest.GetNoteRequest
+
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	var notes []u.Note
-
-	notes, err := s.db.GetUserNotes(req.UserID, req.TagID)
+	notes, err := s.db.GetUserNotes(req.Token.UserId, req.TagID)
 	if err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 
 	if err = json.NewEncoder(w).Encode(notes); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+		APIerror.Error(w, err)
 	} else {
 		w.WriteHeader(http.StatusCreated)
 	}
@@ -272,28 +236,23 @@ func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
 
 // AddNote handler for creating new note for specific tag of user
 func (s *Service) AddNote(w http.ResponseWriter, r *http.Request) {
-	var req request.Request
-	// param checking
-	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	var req noteRequest.CreateNoteRequest
+
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	response, err := s.db.AddNote(req.UserID, req.TagID, req.Note)
+	response, err := s.db.AddNote(req.Token.UserId, req.TagID, req.Note)
 	if err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 
 	if err = json.NewEncoder(w).Encode(response); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+		APIerror.Error(w, err)
 	} else {
-		log.Info("New note for userID: ", req.UserID, " tagID: ", req.TagID, " was created")
-		w.WriteHeader(http.StatusCreated)
+		log.Info("New note for userID: ", req.Token.UserId, " tagID: ", req.TagID, " was created")
+		w.WriteHeader(http.StatusOK)
 	}
 }
