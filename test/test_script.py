@@ -26,10 +26,10 @@ def main():
         create = r.post(url=create_link, json={'tagName': "test"})
         print(f"Just created tag: {create.json()}")
 
-        # # get all tags from the user
+        # get all tags from the user
         create_link = f"{url}{token.json()['token']}/tags"
         tags = r.get(url=create_link).json()
-        print(f"all tokens from the user: {tags}")
+        print(f"all tags from the user: {tags}")
 
         add_note = f"{url}{token.json()['token']}/{tag_name}/note"
         r.post(url=add_note, json={'note': "test"})

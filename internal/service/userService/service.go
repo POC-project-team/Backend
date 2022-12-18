@@ -3,6 +3,7 @@ package userService
 import (
 	"backend/internal/controller/rest/APIerror"
 	"backend/internal/dto/request"
+	"backend/internal/dto/request/tagRequest"
 	"backend/internal/dto/request/userRequest"
 	"backend/internal/dto/responseDto"
 	u "backend/internal/entity"
@@ -67,23 +68,22 @@ func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 	var (
 		tags []responseDto.TagNoUserNotes
-		req  request.Request
 		err  error
 	)
-	if req.BindAndParseToken(w, r) != nil {
+
+	token, err := request.ParseToken(r)
+	if err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	if tags, err = s.db.GetUserTags(req.UserID); err != nil {
+	if tags, err = s.db.GetUserTags(token.UserId); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
 
 	if err = json.NewEncoder(w).Encode(tags); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+		APIerror.Error(w, err)
 	} else {
 		w.WriteHeader(http.StatusCreated)
 	}
@@ -92,88 +92,52 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 	var (
 		resp responseDto.TagNoUserNotes
-		req  request.Request
+		req  tagRequest.GetTagRequest
 		err  error
 	)
-	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(r) != nil {
+		APIerror.Error(w, err)
+		return
+	}
+	token, err := request.ParseToken(r)
+	if err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	if req.TagID == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No tag id provided",
-		})
-		return
-	}
-
-	if resp, err = s.db.GetTag(req.UserID, req.TagID); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
-		return
-	}
-
-	if resp.TagName == "" && resp.TagID == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No such tag",
-		})
+	if resp, err = s.db.GetTag(token.UserId, req.TagID); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+		APIerror.Error(w, err)
 	} else {
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		req  request.Request
+		req  tagRequest.CreateUpdateTagRequest
 		resp responseDto.TagNoUserNotes
 		err  error
 	)
-	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	if req.TagID == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No tag id provided",
-		})
-		return
-	}
-
-	if req.TagName == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No tag name provided",
-		})
-		return
-	}
-
-	if resp, err = s.db.UpdateTag(req.UserID, req.TagID, req.TagName); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+	if resp, err = s.db.UpdateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+		APIerror.Error(w, err)
 	} else {
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -183,44 +147,24 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 	}
 	var (
 		resp response
-		req  request.Request
+		req  tagRequest.CreateUpdateTagRequest
 		err  error
 	)
-	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	if req.TagID == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No tag id provided",
-		})
-		return
-	}
-
-	if req.TagName == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No tag name provided",
-		})
-		return
-	}
-
-	if resp.Tag, err = s.db.CreateTag(req.UserID, req.TagID, req.TagName); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+	if resp.Tag, err = s.db.CreateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
+		APIerror.Error(w, err)
 	} else {
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

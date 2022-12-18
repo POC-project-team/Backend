@@ -1,7 +1,10 @@
 package request
 
 import (
+	"errors"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
+	"net/http"
 	"time"
 )
 
@@ -40,7 +43,11 @@ func GenerateToken(userID int) (Token, error) {
 	return answer, nil
 }
 
-func ParseToken(tokenString string) (Claims, error) {
+func ParseToken(r *http.Request) (Claims, error) {
+	tokenString := mux.Vars(r)["token"]
+	if tokenString == "" {
+		return Claims{}, errors.New("no token provided")
+	}
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{},
 		func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil

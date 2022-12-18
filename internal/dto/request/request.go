@@ -78,18 +78,9 @@ func (req *Request) ParseTagID(w http.ResponseWriter, r *http.Request) error {
 
 // ParseToken needed to parse the userId from request header if it exists
 func (req *Request) BindAndParseToken(w http.ResponseWriter, r *http.Request) error {
-	tokenString := mux.Vars(r)["token"]
-
-	if tokenString == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No token provided",
-		})
-		return errors.New("no token provided")
-	}
-
-	token, err := ParseToken(tokenString)
+	token, err := ParseToken(r)
 	if err != nil {
+		APIerror.Error(w, err)
 		return err
 	}
 
