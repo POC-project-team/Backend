@@ -2,34 +2,37 @@ package userRequest
 
 import (
 	"backend/internal/dto/request"
-	"fmt"
+	"encoding/json"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net/http"
 )
 
 type ChangePasswdRequest struct {
 	Password string `json:"password"`
-	UserID   int
-	Token    string
+	UserID   uint
 }
 
 func (cpr *ChangePasswdRequest) Bind(r *http.Request) error {
+	//goland:noinspection ALL
+	buff, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(buff, cpr)
+	if err != nil {
+		return err
+	}
+
 	if err := cpr.Validate(); err != nil {
 		return err
 	}
 
-	tokenString := mux.Vars(r)["token"]
-	if tokenString == "" {
-		return fmt.Errorf("token is empty")
-	}
-
-	token, err := request.ParseToken(tokenString)
+	token, err := request.ParseToken(r)
 	if err != nil {
 		return err
 	}
 	cpr.UserID = token.UserId
-	cpr.Token = tokenString
 	return nil
 }
 
