@@ -1,9 +1,10 @@
 package response
 
 const (
-	WrongLoginOrPassword = "Wrong login or password"
-	UserAlreadyExists    = "User already exists"
-	UserNotFound         = "User not found"
-	UserNotAuthorized    = "User not authorized"
-	NoSuchTag            = "No such tag"
+	WrongLoginOrPassword = "wrong login or password"
+	UserAlreadyExists    = "user already exists"
+	UserNotFound         = "user not found"
+	UserNotAuthorized    = "user not authorized"
+	TokenNotValid        = "token not valid"
+	NoSuchTag            = "no such tag"
 )

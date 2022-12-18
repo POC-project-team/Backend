@@ -4,17 +4,17 @@ import (
 	"backend/internal/controller/rest/APIerror"
 	"backend/internal/dto/request"
 	"backend/internal/dto/request/userRequest"
-	"backend/internal/repository/postgres"
+	"backend/internal/repository"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 type Service struct {
-	db *postgres.Client
+	db repository.IClient
 }
 
-func NewAuthService(db *postgres.Client) *Service {
+func NewAuthService(db repository.IClient) *Service {
 	return &Service{db: db}
 }
 
@@ -27,14 +27,14 @@ func (s *Service) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UserID, err := s.db.GetUserID(response.Login, response.Password)
+	user, err := s.db.GetUser(response.Login, response.Password)
 
 	if err != nil {
 		APIerror.Error(w, err)
 		return
 	}
 
-	answer, err := request.GenerateToken(UserID)
+	answer, err := request.GenerateToken(user.UserID)
 	if err != nil {
 		APIerror.Error(w, err)
 		return
@@ -43,7 +43,7 @@ func (s *Service) Auth(w http.ResponseWriter, r *http.Request) {
 	if err = json.NewEncoder(w).Encode(answer); err != nil {
 		APIerror.Error(w, err)
 	} else {
-		log.Info("New token was created for user ", UserID)
+		log.Info("New token was created for user ", user)
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -10,7 +10,7 @@ import (
 
 type ChangePasswdRequest struct {
 	Password string `json:"password"`
-	UserID   int
+	UserID   uint
 }
 
 func (cpr *ChangePasswdRequest) Bind(r *http.Request) error {

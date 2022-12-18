@@ -8,7 +8,7 @@ import (
 
 type ChangeLoginRequest struct {
 	Login  string `json:"login"`
-	UserID int
+	UserID uint
 	Token  string
 }
 

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"backend/internal/controller/rest/APIerror"
-	"backend/internal/repository/postgres"
+	"backend/internal/repository"
 	au "backend/internal/service/auth"
 	service "backend/internal/service/userService"
 	"github.com/gorilla/mux"
@@ -10,7 +10,7 @@ import (
 )
 
 // MyHandler defines the routes, returns router
-func MyHandler(database *postgres.Client) *mux.Router {
+func MyHandler(database repository.IClient) *mux.Router {
 	srv := service.NewService(database)
 	authService := au.NewAuthService(database)
 	router := mux.NewRouter()

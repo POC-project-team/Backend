@@ -7,17 +7,19 @@ import (
 	"backend/internal/dto/request/tagRequest"
 	"backend/internal/dto/request/userRequest"
 	"backend/internal/dto/responseDto"
-	"backend/internal/repository/postgres"
+	"backend/internal/entity"
+	"backend/internal/repository"
 	"encoding/json"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 type Service struct {
-	db *postgres.Client
+	db repository.IClient
 }
 
-func NewService(database *postgres.Client) *Service {
+func NewService(database repository.IClient) *Service {
 	return &Service{
 		db: database,
 	}
@@ -31,8 +33,14 @@ func (s *Service) GetAllUsers(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
+	// return all id's of users
+	var usersId []string
+	for _, user := range users {
+		usersId = append(usersId, fmt.Sprint(user.UserID))
+	}
+
 	resp := responseDto.UsersResponse{
-		Users: users,
+		Users: usersId,
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
@@ -67,8 +75,7 @@ func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
 // GetAllUsersTags handler for getting all tags of specific user
 func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 	var (
-		tags []responseDto.TagNoUserNotes
-		err  error
+		tags []entity.Tag
 	)
 
 	token, err := request.ParseToken(r)
@@ -82,6 +89,14 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var tagsNoUserNotes []responseDto.TagNoUserNotes
+	for _, tag := range tags {
+		tagsNoUserNotes = append(tagsNoUserNotes, responseDto.TagNoUserNotes{
+			TagID:   tag.TagID,
+			TagName: tag.TagName,
+		})
+	}
+
 	if err = json.NewEncoder(w).Encode(tags); err != nil {
 		APIerror.Error(w, err)
 	} else {
@@ -91,9 +106,9 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		resp responseDto.TagNoUserNotes
-		req  tagRequest.GetTagRequest
-		err  error
+		tag entity.Tag
+		req tagRequest.GetTagRequest
+		err error
 	)
 	if req.Bind(r) != nil {
 		APIerror.Error(w, err)
@@ -105,9 +120,14 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp, err = s.db.GetTag(token.UserId, req.TagID); err != nil {
+	if tag, err = s.db.GetTag(token.UserId, req.TagID); err != nil {
 		APIerror.Error(w, err)
 		return
+	}
+
+	resp := responseDto.TagNoUserNotes{
+		TagID:   tag.TagID,
+		TagName: tag.TagName,
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
@@ -119,9 +139,9 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		req  tagRequest.CreateUpdateTagRequest
-		resp responseDto.TagNoUserNotes
-		err  error
+		tag entity.Tag
+		req tagRequest.CreateUpdateTagRequest
+		err error
 	)
 
 	if err := req.Bind(r); err != nil {
@@ -129,9 +149,14 @@ func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp, err = s.db.UpdateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
+	if tag, err = s.db.UpdateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
 		APIerror.Error(w, err)
 		return
+	}
+
+	resp := responseDto.TagNoUserNotes{
+		TagID:   tag.TagID,
+		TagName: tag.TagName,
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
@@ -147,6 +172,7 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 	}
 	var (
 		resp response
+		tag  entity.Tag
 		req  tagRequest.CreateUpdateTagRequest
 		err  error
 	)
@@ -156,9 +182,14 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp.Tag, err = s.db.CreateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
+	if tag, err = s.db.CreateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
 		APIerror.Error(w, err)
 		return
+	}
+
+	resp.Tag = responseDto.TagNoUserNotes{
+		TagID:   tag.TagID,
+		TagName: tag.TagName,
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {

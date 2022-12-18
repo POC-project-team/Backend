@@ -50,6 +50,11 @@ func Error(w http.ResponseWriter, err error) {
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
 		}
+	case response.TokenNotValid:
+		HTTPError = HTTPErrorHandler{
+			ErrorCode:   http.StatusUnauthorized,
+			Description: err.Error(),
+		}
 	case response.NoSuchTag:
 		HTTPError = HTTPErrorHandler{
 			ErrorCode:   http.StatusNotFound,
