@@ -2,10 +2,12 @@ package userService
 
 import (
 	"backend/internal/controller/rest/APIerror"
-	"backend/internal/controller/rest/request"
+	"backend/internal/controller/rest/response"
+	"backend/internal/dto/request"
+	"backend/internal/dto/request/userRequest"
+	"backend/internal/dto/responseDto"
 	u "backend/internal/entity"
 	"backend/internal/repository/postgres"
-	db "backend/internal/repository/sqlite"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -52,49 +54,38 @@ func (s *Service) GetAllUsers(w http.ResponseWriter, _ *http.Request) {
 
 // CreateUser handler for creating new user
 func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var req request.Request
-	if req.Bind(w, r) != nil {
-		return
-	}
-
-	if req.Login == "" || req.Password == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No login or password provided",
-		})
+	var req userRequest.AuthRequest
+	if req.Bind(r) != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	result, err := s.db.CreateUser(req.Login, req.Password)
 	if err != nil {
-		if err.Error() == "user with such login exists" {
+		switch err.Error() {
+		case response.UserAlreadyExists:
 			APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 				ErrorCode:   http.StatusBadRequest,
 				Description: err.Error(),
 			})
-			return
-		} else {
+		default:
 			APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 				ErrorCode:   http.StatusInternalServerError,
 				Description: err.Error(),
 			})
-			return
 		}
 	}
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
-	} else {
-		w.WriteHeader(http.StatusCreated)
+
+	if json.NewEncoder(w).Encode(result) != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // GetAllUsersTags handler for getting all tags of specific user
 func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 	var (
-		tags []db.TagNoUserNotes
+		tags []responseDto.TagNoUserNotes
 		req  request.Request
 		err  error
 	)
@@ -122,7 +113,7 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		resp db.TagNoUserNotes
+		resp responseDto.TagNoUserNotes
 		req  request.Request
 		err  error
 	)
@@ -167,7 +158,7 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	var (
 		req  request.Request
-		resp db.TagNoUserNotes
+		resp responseDto.TagNoUserNotes
 		err  error
 	)
 	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
@@ -210,7 +201,7 @@ func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 	type response struct {
-		Tag db.TagNoUserNotes `json:"tag"`
+		Tag responseDto.TagNoUserNotes `json:"tag"`
 	}
 	var (
 		resp response

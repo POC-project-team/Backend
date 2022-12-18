@@ -2,7 +2,7 @@ package auth
 
 import (
 	"backend/internal/controller/rest/APIerror"
-	service "backend/internal/controller/rest/request"
+	service "backend/internal/dto/request"
 	"backend/internal/repository/postgres"
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"

@@ -1,9 +1,9 @@
 package postgres
 
 import (
+	response "backend/internal/dto/responseDto"
 	u "backend/internal/entity"
 	"backend/internal/repository/model"
-	"backend/internal/repository/sqlite"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -120,14 +120,14 @@ func (c *Client) DeleteUser(userId int) error {
 //		}
 //		return tags, nil
 //	}
-func (c *Client) GetUserTags(userId int) ([]sqlite.TagNoUserNotes, error) {
+func (c *Client) GetUserTags(userId int) ([]response.TagNoUserNotes, error) {
 	var tags []model.Tag
 	if err := c.db.Where("user_id = ?", userId).Find(&tags).Error; err != nil {
 		return nil, err
 	}
-	var tagsNoUserNotes []sqlite.TagNoUserNotes
+	var tagsNoUserNotes []response.TagNoUserNotes
 	for _, tag := range tags {
-		tagsNoUserNotes = append(tagsNoUserNotes, sqlite.TagNoUserNotes{
+		tagsNoUserNotes = append(tagsNoUserNotes, response.TagNoUserNotes{
 			TagID:   tag.TagID,
 			TagName: tag.TagName,
 		})
@@ -143,13 +143,16 @@ func (c *Client) GetUserTags(userId int) ([]sqlite.TagNoUserNotes, error) {
 //	return tag, nil
 //}
 
-// TODO: write ok function
-func (c *Client) GetTag(userId int, tagId string) (sqlite.TagNoUserNotes, error) {
-	var tag sqlite.TagNoUserNotes
+func (c *Client) GetTag(userId int, tagId string) (response.TagNoUserNotes, error) {
+	var tag model.Tag
+
 	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).First(&tag).Error; err != nil {
-		return tag, err
+		return response.TagNoUserNotes{}, err
 	}
-	return tag, nil
+	return response.TagNoUserNotes{
+		TagID:   tag.TagID,
+		TagName: tag.TagName,
+	}, nil
 }
 
 func (c *Client) DeleteTag(userId int, tagId string) error {
@@ -167,24 +170,24 @@ func (c *Client) GetUserNotes(userId int, tagId string) ([]u.Note, error) {
 	return notes, nil
 }
 
-func (c *Client) UpdateTag(userId int, tagId, tagName string) (sqlite.TagNoUserNotes, error) {
-	var tag sqlite.TagNoUserNotes
+func (c *Client) UpdateTag(userId int, tagId, tagName string) (response.TagNoUserNotes, error) {
+	var tag response.TagNoUserNotes
 	if err := c.db.Model(&model.Tag{}).Where("user_id = ? AND tag_id = ?", userId, tagId).Update("tag_name", tagName).Error; err != nil {
 		return tag, err
 	}
 	return tag, nil
 }
 
-func (c *Client) CreateTag(userId int, tagId, tagName string) (sqlite.TagNoUserNotes, error) {
+func (c *Client) CreateTag(userId int, tagId, tagName string) (response.TagNoUserNotes, error) {
 	var tag model.Tag
 	if err := c.db.Create(&model.Tag{UserID: uint(userId), TagID: tagId, TagName: tagName}).Error; err != nil {
-		return sqlite.TagNoUserNotes{}, err
+		return response.TagNoUserNotes{}, err
 	}
 	// return the created tag
 	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).First(&tag).Error; err != nil {
-		return sqlite.TagNoUserNotes{}, err
+		return response.TagNoUserNotes{}, err
 	}
-	return sqlite.TagNoUserNotes{
+	return response.TagNoUserNotes{
 		TagID:   tag.TagID,
 		TagName: tag.TagName,
 	}, nil

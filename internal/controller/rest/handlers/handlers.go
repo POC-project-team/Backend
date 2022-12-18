@@ -23,9 +23,9 @@ func Routes(router *mux.Router, srv *service.Service) {
 	// routers for users and auth
 	router.HandleFunc("/users", srv.GetAllUsers).Methods("GET")
 	router.HandleFunc("/signup", srv.CreateUser).Methods("POST")
-	router.HandleFunc("/auth", au.Auth).Methods("POST")
 
 	// routers for users settings and profile
+	router.HandleFunc("/auth", au.Auth).Methods("POST")
 	router.HandleFunc("/{token}/changeLogin", au.ChangeLogin).Methods("POST")
 	router.HandleFunc("/{token}/changePassword", au.ChangePassword).Methods("POST")
 
