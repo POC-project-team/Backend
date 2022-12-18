@@ -2,7 +2,6 @@ package userService
 
 import (
 	"backend/internal/controller/rest/APIerror"
-	"backend/internal/controller/rest/response"
 	"backend/internal/dto/request"
 	"backend/internal/dto/request/userRequest"
 	"backend/internal/dto/responseDto"
@@ -20,64 +19,46 @@ type Service struct {
 func NewService(database *postgres.Client) *Service {
 	return &Service{
 		db: database,
-		//*db.NewSQLDataBase(),
 	}
 }
 
 // GetAllUsers func to return all users in the map
 func (s *Service) GetAllUsers(w http.ResponseWriter, _ *http.Request) {
-	type response struct {
-		Users []string `json:"Users"`
+	users, err := s.db.GetAllUsers()
+	if err != nil {
+		APIerror.Error(w, err)
+		return
 	}
 
-	var (
-		resp response
-		err  error
-	)
-	resp.Users, err = s.db.GetAllUsers()
-	if err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: err.Error(),
-		})
+	resp := responseDto.UsersResponse{
+		Users: users,
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
-	} else {
-		w.WriteHeader(http.StatusCreated)
+		APIerror.Error(w, err)
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // CreateUser handler for creating new user
 func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req userRequest.AuthRequest
-	if req.Bind(r) != nil {
-		w.WriteHeader(http.StatusBadRequest)
+
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	result, err := s.db.CreateUser(req.Login, req.Password)
 	if err != nil {
-		switch err.Error() {
-		case response.UserAlreadyExists:
-			APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-				ErrorCode:   http.StatusBadRequest,
-				Description: err.Error(),
-			})
-		default:
-			APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-				ErrorCode:   http.StatusInternalServerError,
-				Description: err.Error(),
-			})
-		}
+		APIerror.Error(w, err)
+		return
 	}
 
 	if json.NewEncoder(w).Encode(result) != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		APIerror.Error(w, err)
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -94,10 +75,7 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if tags, err = s.db.GetUserTags(req.UserID); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 

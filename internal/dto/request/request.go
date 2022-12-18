@@ -22,7 +22,7 @@ type Request struct {
 	Password string `json:"password"`
 }
 
-func toHash(passwd string) string {
+func ToHash(passwd string) string {
 	h := sha1.New()
 	return hex.EncodeToString(h.Sum([]byte(passwd)))
 }
@@ -56,7 +56,7 @@ func (req *Request) Bind(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("cannot parse data from JSON")
 	}
 	if req.Password != "" {
-		req.Password = toHash(req.Password)
+		req.Password = ToHash(req.Password)
 	}
 
 	return nil

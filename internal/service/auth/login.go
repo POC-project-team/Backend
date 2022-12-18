@@ -3,6 +3,7 @@ package auth
 import (
 	"backend/internal/controller/rest/APIerror"
 	service "backend/internal/dto/request"
+	"backend/internal/dto/request/userRequest"
 	"backend/internal/repository/postgres"
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
@@ -10,6 +11,14 @@ import (
 	"net/http"
 	"time"
 )
+
+type Service struct {
+	db *postgres.Client
+}
+
+func NewAuthService(db *postgres.Client) *Service {
+	return &Service{db: db}
+}
 
 var jwtKey = []byte("secret_key__DO_NOT_POST_IT_TO_GITHUB")
 
@@ -23,30 +32,18 @@ type Token struct {
 }
 
 // Auth generates the token for the user
-func Auth(w http.ResponseWriter, r *http.Request) {
-	var response service.Request
+func (s *Service) Auth(w http.ResponseWriter, r *http.Request) {
+	var response userRequest.AuthRequest
 
-	if err := response.Bind(w, r); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: err.Error(),
-		})
+	if err := response.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
-	//UserID, err := sqlite.NewSQLDataBase().GetUserID(response.Login, response.Password)
-	db, err := postgres.NewClient()
-	if err != nil {
-		log.Error(err)
-	}
-	defer db.Close()
-	UserID, err := db.GetUserID(response.Login, response.Password)
+	UserID, err := s.db.GetUserID(response.Login, response.Password)
 
 	if err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 
@@ -62,25 +59,19 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	var answer Token
 	answer.JWTToken, err = token.SignedString(jwtKey)
 	if err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 
 	if err = json.NewEncoder(w).Encode(answer); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot make token",
-		})
+		APIerror.Error(w, err)
 	} else {
 		log.Info("New token was created for user ", UserID)
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
-func ChangeLogin(w http.ResponseWriter, r *http.Request) {
+func (s *Service) ChangeLogin(w http.ResponseWriter, r *http.Request) {
 	var response service.Request
 
 	if response.ParseToken(w, r) != nil {
@@ -88,37 +79,20 @@ func ChangeLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := response.Bind(w, r); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 
-	db, err := postgres.NewClient()
-	if err != nil {
-		log.Error(err)
-	}
-	defer func(db *postgres.Client) {
-		err := db.Close()
-		if err != nil {
-
-		}
-	}(db)
-	if err := db.ChangeLogin(response.UserID, response.Login); err != nil {
-		//if err := sqlite.NewSQLDataBase().ChangeLogin(response.UserID, response.Login); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+	if err := s.db.ChangeLogin(response.UserID, response.Login); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	log.Info("Login was changed for user ", response.UserID)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 }
 
-func ChangePassword(w http.ResponseWriter, r *http.Request) {
+func (s *Service) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	var response service.Request
 
 	if response.ParseToken(w, r) != nil {
@@ -126,23 +100,12 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := response.Bind(w, r); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 
-	db, err := postgres.NewClient()
-	if err != nil {
-		log.Error(err)
-	}
-	if err := db.ChangePassword(response.UserID, response.Password); err != nil {
-		//if err := sqlite.NewSQLDataBase().ChangePassword(response.UserID, response.Password); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+	if err := s.db.ChangePassword(response.UserID, response.Password); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 

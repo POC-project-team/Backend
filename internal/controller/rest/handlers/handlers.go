@@ -12,22 +12,23 @@ import (
 // MyHandler defines the routes, returns router
 func MyHandler(database *postgres.Client) *mux.Router {
 	srv := service.NewService(database)
+	authService := au.NewAuthService(database)
 	router := mux.NewRouter()
 
-	Routes(router, srv)
+	Routes(router, srv, authService)
 	router.Handle("/", router)
 	return router
 }
 
-func Routes(router *mux.Router, srv *service.Service) {
+func Routes(router *mux.Router, srv *service.Service, authService *au.Service) {
 	// routers for users and auth
 	router.HandleFunc("/users", srv.GetAllUsers).Methods("GET")
 	router.HandleFunc("/signup", srv.CreateUser).Methods("POST")
 
 	// routers for users settings and profile
-	router.HandleFunc("/auth", au.Auth).Methods("POST")
-	router.HandleFunc("/{token}/changeLogin", au.ChangeLogin).Methods("POST")
-	router.HandleFunc("/{token}/changePassword", au.ChangePassword).Methods("POST")
+	router.HandleFunc("/auth", authService.Auth).Methods("POST")
+	router.HandleFunc("/{token}/changeLogin", authService.ChangeLogin).Methods("POST")
+	router.HandleFunc("/{token}/changePassword", authService.ChangePassword).Methods("POST")
 
 	// routers for tag handling
 	router.HandleFunc("/{token}/tags", srv.GetAllUsersTags).Methods("GET")
