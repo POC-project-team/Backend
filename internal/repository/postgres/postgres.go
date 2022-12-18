@@ -2,8 +2,7 @@ package postgres
 
 import (
 	response "backend/internal/dto/responseDto"
-	u "backend/internal/entity"
-	"backend/internal/repository/model"
+	entity "backend/internal/entity"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -29,13 +28,10 @@ func (c *Client) Connect() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := db.AutoMigrate(&model.User{}); err != nil {
+	if err := db.AutoMigrate(&entity.User{}); err != nil {
 		return nil, err
 	}
-	if err := db.AutoMigrate(&model.Tag{}); err != nil {
-		return nil, err
-	}
-	if err := db.AutoMigrate(&model.Note{}); err != nil {
+	if err := db.AutoMigrate(&entity.Tag{}); err != nil {
 		return nil, err
 	}
 	return db, nil
@@ -50,7 +46,7 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) GetUserID(login, password string) (int, error) {
-	var user model.User
+	var user entity.User
 	if err := c.db.Where("login = ? AND password = ?", login, password).First(&user).Error; err != nil {
 		return 0, err
 	}
@@ -58,7 +54,7 @@ func (c *Client) GetUserID(login, password string) (int, error) {
 }
 
 func (c *Client) GetAllUsers() ([]string, error) {
-	var users []model.User
+	var users []entity.User
 	if err := c.db.Find(&users).Error; err != nil {
 		return nil, err
 	}
@@ -70,44 +66,44 @@ func (c *Client) GetAllUsers() ([]string, error) {
 	return usersId, nil
 }
 
-func (c *Client) CreateUser(login, password string) (u.User, error) {
-	var user model.User
+func (c *Client) CreateUser(login, password string) (entity.User, error) {
+	var user entity.User
 
 	// create new user with unique id
 	// put new id to user
 
-	if err := c.db.Create(&model.User{Login: login, Password: password}).Error; err != nil {
-		return u.User{
+	if err := c.db.Create(&entity.User{Login: login, Password: password}).Error; err != nil {
+		return entity.User{
 			UserID: 0,
 		}, err
 	}
 
 	// add and return new user
 	if err := c.db.Where("login = ? AND password = ?", login, password).First(&user).Error; err != nil {
-		return u.User{
+		return entity.User{
 			UserID: 0,
 		}, err
 	}
 
-	return u.User{UserID: int(user.UserID)}, nil
+	return entity.User{UserID: user.UserID}, nil
 }
 
 func (c *Client) ChangePassword(userId int, password string) error {
-	if err := c.db.Model(&model.User{}).Where("user_id = ?", userId).Update("password", password).Error; err != nil {
+	if err := c.db.Model(&entity.User{}).Where("user_id = ?", userId).Update("password", password).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *Client) ChangeLogin(userId int, login string) error {
-	if err := c.db.Model(&model.User{}).Where("user_id = ?", userId).Update("login", login).Error; err != nil {
+	if err := c.db.Model(&entity.User{}).Where("user_id = ?", userId).Update("login", login).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *Client) DeleteUser(userId int) error {
-	if err := c.db.Where("user_id = ?", userId).Delete(&model.User{}).Error; err != nil {
+	if err := c.db.Where("user_id = ?", userId).Delete(&entity.User{}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -121,7 +117,7 @@ func (c *Client) DeleteUser(userId int) error {
 //		return tags, nil
 //	}
 func (c *Client) GetUserTags(userId int) ([]response.TagNoUserNotes, error) {
-	var tags []model.Tag
+	var tags []entity.Tag
 	if err := c.db.Where("user_id = ?", userId).Find(&tags).Error; err != nil {
 		return nil, err
 	}
@@ -144,7 +140,7 @@ func (c *Client) GetUserTags(userId int) ([]response.TagNoUserNotes, error) {
 //}
 
 func (c *Client) GetTag(userId int, tagId string) (response.TagNoUserNotes, error) {
-	var tag model.Tag
+	var tag entity.Tag
 
 	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).First(&tag).Error; err != nil {
 		return response.TagNoUserNotes{}, err
@@ -156,14 +152,14 @@ func (c *Client) GetTag(userId int, tagId string) (response.TagNoUserNotes, erro
 }
 
 func (c *Client) DeleteTag(userId int, tagId string) error {
-	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).Delete(&model.Tag{}).Error; err != nil {
+	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).Delete(&entity.Tag{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) GetUserNotes(userId int, tagId string) ([]u.Note, error) {
-	var notes []u.Note
+func (c *Client) GetUserNotes(userId int, tagId string) ([]entity.Note, error) {
+	var notes []entity.Note
 	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).Find(&notes).Error; err != nil {
 		return nil, err
 	}
@@ -172,15 +168,15 @@ func (c *Client) GetUserNotes(userId int, tagId string) ([]u.Note, error) {
 
 func (c *Client) UpdateTag(userId int, tagId, tagName string) (response.TagNoUserNotes, error) {
 	var tag response.TagNoUserNotes
-	if err := c.db.Model(&model.Tag{}).Where("user_id = ? AND tag_id = ?", userId, tagId).Update("tag_name", tagName).Error; err != nil {
+	if err := c.db.Model(&entity.Tag{}).Where("user_id = ? AND tag_id = ?", userId, tagId).Update("tag_name", tagName).Error; err != nil {
 		return tag, err
 	}
 	return tag, nil
 }
 
 func (c *Client) CreateTag(userId int, tagId, tagName string) (response.TagNoUserNotes, error) {
-	var tag model.Tag
-	if err := c.db.Create(&model.Tag{UserID: uint(userId), TagID: tagId, TagName: tagName}).Error; err != nil {
+	var tag entity.Tag
+	if err := c.db.Create(&entity.Tag{UserID: uint(userId), TagID: tagId, TagName: tagName}).Error; err != nil {
 		return response.TagNoUserNotes{}, err
 	}
 	// return the created tag
@@ -194,20 +190,20 @@ func (c *Client) CreateTag(userId int, tagId, tagName string) (response.TagNoUse
 }
 
 func (c *Client) TransferTag(userId int, tagId, login string) error {
-	var user model.User
+	var user entity.User
 	if err := c.db.Where("login = ?", login).First(&user).Error; err != nil {
 		return err
 	}
-	if err := c.db.Model(&model.Tag{}).Where("user_id = ? AND tag_id = ?", userId, tagId).Update("user_id", user.UserID).Error; err != nil {
+	if err := c.db.Model(&entity.Tag{}).Where("user_id = ? AND tag_id = ?", userId, tagId).Update("user_id", user.UserID).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) AddNote(userId int, tagId, noteInfo string) (u.Tag, error) {
-	var tag u.Tag
+func (c *Client) AddNote(userId int, tagId, noteInfo string) (entity.Tag, error) {
+	var tag entity.Tag
 
-	if err := c.db.Create(&model.Note{UserId: uint(userId), TagID: tagId, Note: noteInfo, Time: time.Now()}).Error; err != nil {
+	if err := c.db.Create(&entity.Note{UserId: uint(userId), TagID: tagId, Note: noteInfo, Time: time.Now()}).Error; err != nil {
 		return tag, err
 	}
 	return tag, nil
