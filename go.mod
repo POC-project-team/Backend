@@ -4,8 +4,8 @@ go 1.17
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	gorm.io/driver/postgres v1.4.5

@@ -2,10 +2,11 @@ package userService
 
 import (
 	"backend/internal/controller/rest/APIerror"
-	"backend/internal/controller/rest/request"
+	"backend/internal/dto/request"
+	"backend/internal/dto/request/userRequest"
+	"backend/internal/dto/responseDto"
 	u "backend/internal/entity"
 	"backend/internal/repository/postgres"
-	db "backend/internal/repository/sqlite"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -18,95 +19,63 @@ type Service struct {
 func NewService(database *postgres.Client) *Service {
 	return &Service{
 		db: database,
-		//*db.NewSQLDataBase(),
 	}
 }
 
 // GetAllUsers func to return all users in the map
 func (s *Service) GetAllUsers(w http.ResponseWriter, _ *http.Request) {
-	type response struct {
-		Users []string `json:"Users"`
+	users, err := s.db.GetAllUsers()
+	if err != nil {
+		APIerror.Error(w, err)
+		return
 	}
 
-	var (
-		resp response
-		err  error
-	)
-	resp.Users, err = s.db.GetAllUsers()
-	if err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: err.Error(),
-		})
+	resp := responseDto.UsersResponse{
+		Users: users,
 	}
 
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
-	} else {
-		w.WriteHeader(http.StatusCreated)
+		APIerror.Error(w, err)
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // CreateUser handler for creating new user
 func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var req request.Request
-	if req.Bind(w, r) != nil {
-		return
-	}
+	var req userRequest.AuthRequest
 
-	if req.Login == "" || req.Password == "" {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: "No login or password provided",
-		})
+	if err := req.Bind(r); err != nil {
+		APIerror.Error(w, err)
 		return
 	}
 
 	result, err := s.db.CreateUser(req.Login, req.Password)
 	if err != nil {
-		if err.Error() == "user with such login exists" {
-			APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-				ErrorCode:   http.StatusBadRequest,
-				Description: err.Error(),
-			})
-			return
-		} else {
-			APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-				ErrorCode:   http.StatusInternalServerError,
-				Description: err.Error(),
-			})
-			return
-		}
+		APIerror.Error(w, err)
+		return
 	}
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusInternalServerError,
-			Description: "Cannot write data to request",
-		})
-	} else {
-		w.WriteHeader(http.StatusCreated)
+
+	if json.NewEncoder(w).Encode(result) != nil {
+		APIerror.Error(w, err)
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // GetAllUsersTags handler for getting all tags of specific user
 func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 	var (
-		tags []db.TagNoUserNotes
+		tags []responseDto.TagNoUserNotes
 		req  request.Request
 		err  error
 	)
-	if req.ParseToken(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil {
 		return
 	}
 
 	if tags, err = s.db.GetUserTags(req.UserID); err != nil {
-		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
-			ErrorCode:   http.StatusBadRequest,
-			Description: err.Error(),
-		})
+		APIerror.Error(w, err)
 		return
 	}
 
@@ -122,11 +91,11 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		resp db.TagNoUserNotes
+		resp responseDto.TagNoUserNotes
 		req  request.Request
 		err  error
 	)
-	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -167,10 +136,10 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	var (
 		req  request.Request
-		resp db.TagNoUserNotes
+		resp responseDto.TagNoUserNotes
 		err  error
 	)
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -210,14 +179,14 @@ func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 	type response struct {
-		Tag db.TagNoUserNotes `json:"tag"`
+		Tag responseDto.TagNoUserNotes `json:"tag"`
 	}
 	var (
 		resp response
 		req  request.Request
 		err  error
 	)
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -260,7 +229,7 @@ func (s *Service) DeleteTag(w http.ResponseWriter, r *http.Request) {
 		req request.Request
 		err error
 	)
-	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -297,7 +266,7 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 		req request.Request
 		err error
 	)
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -332,7 +301,7 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 // GetNotes handler for getting notes for specific tag of user
 func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
 	var req request.Request
-	if req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
@@ -361,7 +330,7 @@ func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
 func (s *Service) AddNote(w http.ResponseWriter, r *http.Request) {
 	var req request.Request
 	// param checking
-	if req.Bind(w, r) != nil || req.ParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
+	if req.Bind(w, r) != nil || req.BindAndParseToken(w, r) != nil || req.ParseTagID(w, r) != nil {
 		return
 	}
 
