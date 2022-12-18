@@ -2,12 +2,17 @@ package app
 
 import (
 	s "backend/internal/controller/rest/server"
-	db "backend/internal/repository/sqlite"
+	"backend/internal/repository/postgres"
 	log "github.com/sirupsen/logrus"
 )
 
 func Run() {
-	database := db.NewSQLDataBase()
+	//database := db.NewSQLDataBase()
+
+	database, err := postgres.NewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
 	server := s.NewServer(database)
 	log.Info("The server is up and running at ", server.Addr, "\n")
 

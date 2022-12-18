@@ -4,6 +4,7 @@ import (
 	"backend/internal/controller/rest/APIerror"
 	"backend/internal/controller/rest/request"
 	u "backend/internal/entity"
+	"backend/internal/repository/postgres"
 	db "backend/internal/repository/sqlite"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
@@ -11,12 +12,12 @@ import (
 )
 
 type Service struct {
-	BaseSQL db.SQL
+	db *postgres.Client
 }
 
-func NewService(database *db.SQL) *Service {
+func NewService(database *postgres.Client) *Service {
 	return &Service{
-		BaseSQL: *database,
+		db: database,
 		//*db.NewSQLDataBase(),
 	}
 }
@@ -31,7 +32,7 @@ func (s *Service) GetAllUsers(w http.ResponseWriter, _ *http.Request) {
 		resp response
 		err  error
 	)
-	resp.Users, err = s.BaseSQL.GetAllUsers()
+	resp.Users, err = s.db.GetAllUsers()
 	if err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusInternalServerError,
@@ -64,7 +65,7 @@ func (s *Service) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := s.BaseSQL.CreateUser(req.Login, req.Password)
+	result, err := s.db.CreateUser(req.Login, req.Password)
 	if err != nil {
 		if err.Error() == "user with such login exists" {
 			APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
@@ -101,7 +102,7 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if tags, err = s.BaseSQL.GetUserTags(req.UserID); err != nil {
+	if tags, err = s.db.GetUserTags(req.UserID); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -137,7 +138,7 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp, err = s.BaseSQL.GetTag(req.UserID, req.TagID); err != nil {
+	if resp, err = s.db.GetTag(req.UserID, req.TagID); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -189,7 +190,7 @@ func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp, err = s.BaseSQL.UpdateTag(req.UserID, req.TagID, req.TagName); err != nil {
+	if resp, err = s.db.UpdateTag(req.UserID, req.TagID, req.TagName); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -236,7 +237,7 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp.Tag, err = s.BaseSQL.CreateTag(req.UserID, req.TagID, req.TagName); err != nil {
+	if resp.Tag, err = s.db.CreateTag(req.UserID, req.TagID, req.TagName); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -271,7 +272,7 @@ func (s *Service) DeleteTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = s.BaseSQL.DeleteTag(req.UserID, req.TagID); err != nil {
+	if err = s.db.DeleteTag(req.UserID, req.TagID); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -308,7 +309,7 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = s.BaseSQL.TransferTag(req.UserID, req.TagID, req.Login); err != nil {
+	if err = s.db.TransferTag(req.UserID, req.TagID, req.Login); err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
@@ -337,7 +338,7 @@ func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
 
 	var notes []u.Note
 
-	notes, err := s.BaseSQL.GetUserNotes(req.UserID, req.TagID)
+	notes, err := s.db.GetUserNotes(req.UserID, req.TagID)
 	if err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
@@ -364,7 +365,7 @@ func (s *Service) AddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := s.BaseSQL.AddNote(req.UserID, req.TagID, req.Note)
+	response, err := s.db.AddNote(req.UserID, req.TagID, req.Note)
 	if err != nil {
 		APIerror.HTTPErrorHandle(w, APIerror.HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
