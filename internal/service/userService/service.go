@@ -114,6 +114,7 @@ func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 		APIerror.Error(w, err)
 		return
 	}
+	// TODO: need to change this to basic request
 	token, err := request.ParseToken(r)
 	if err != nil {
 		APIerror.Error(w, err)

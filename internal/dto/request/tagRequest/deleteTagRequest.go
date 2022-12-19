@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// TODO: convert to basic request
 type DeleteTagRequest struct {
 	TagID string `json:"tagID"`
 	Token request.Claims

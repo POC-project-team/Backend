@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// TODO: change to the basic request ()
 type GetTagRequest struct {
 	TagID string `json:"tagID"`
 }
