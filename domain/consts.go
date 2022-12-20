@@ -1,4 +1,4 @@
-package response
+package domain
 
 const (
 	WrongLoginOrPassword = "wrong login or password"
