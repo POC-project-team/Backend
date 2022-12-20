@@ -56,12 +56,12 @@ func (s *Service) ChangeLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.db.ChangeLogin(response.UserID, response.Login); err != nil {
+	if err := s.db.ChangeLogin(response.Token.UserId, response.Login); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
 
-	log.Info("Login was changed for user ", response.UserID)
+	log.Info("Login was changed for user ", response.Token.UserId)
 	w.WriteHeader(http.StatusOK)
 }
 

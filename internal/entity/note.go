@@ -5,8 +5,8 @@ import (
 )
 
 type Note struct {
-	UserId uint      `gorm:"references:UserID"`
-	TagID  string    `gorm:"references:TagID"`
+	UserId uint      `json:"-" gorm:"references:UserID"`
+	TagID  string    `json:"-" gorm:"references:TagID"`
 	Note   string    `json:"note" gorm:"column:note"`
 	Time   time.Time `json:"time" gorm:"column:time"`
 }

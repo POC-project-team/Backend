@@ -107,21 +107,16 @@ func (s *Service) GetAllUsersTags(w http.ResponseWriter, r *http.Request) {
 func (s *Service) GetTag(w http.ResponseWriter, r *http.Request) {
 	var (
 		tag entity.Tag
-		req tagRequest.GetTagRequest
+		req request.BasicRequest
 		err error
 	)
-	if req.Bind(r) != nil {
-		APIerror.Error(w, err)
-		return
-	}
-	// TODO: need to change this to basic request
-	token, err := request.ParseToken(r)
-	if err != nil {
+
+	if err := req.BindBasicRequest(r); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
 
-	if tag, err = s.db.GetTag(token.UserId, req.TagID); err != nil {
+	if tag, err = s.db.GetTag(req.Token.UserId, req.TagId); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
@@ -150,7 +145,7 @@ func (s *Service) UpdateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if tag, err = s.db.UpdateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
+	if tag, err = s.db.UpdateTag(req.Token.UserId, req.TagId, req.TagName); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
@@ -183,7 +178,7 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if tag, err = s.db.CreateTag(req.Token.UserId, req.TagID, req.TagName); err != nil {
+	if tag, err = s.db.CreateTag(req.Token.UserId, req.TagId, req.TagName); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
@@ -202,14 +197,14 @@ func (s *Service) CreateTag(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) DeleteTag(w http.ResponseWriter, r *http.Request) {
 	var (
-		req tagRequest.DeleteTagRequest
+		req request.BasicRequest
 	)
-	if err := req.Bind(r); err != nil {
+	if err := req.BindBasicRequest(r); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
 
-	if err := s.db.DeleteTag(req.Token.UserId, req.TagID); err != nil {
+	if err := s.db.DeleteTag(req.Token.UserId, req.TagId); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
@@ -230,7 +225,7 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.db.TransferTag(req.Token.UserId, req.TagID, req.Login); err != nil {
+	if err := s.db.TransferTag(req.Token.UserId, req.TagId, req.Login); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
@@ -246,14 +241,14 @@ func (s *Service) TransferTag(w http.ResponseWriter, r *http.Request) {
 
 // GetNotes handler for getting notes for specific tag of user
 func (s *Service) GetNotes(w http.ResponseWriter, r *http.Request) {
-	var req noteRequest.GetNoteRequest
+	var req request.BasicRequest
 
-	if err := req.Bind(r); err != nil {
+	if err := req.BindBasicRequest(r); err != nil {
 		APIerror.Error(w, err)
 		return
 	}
 
-	notes, err := s.db.GetUserNotes(req.Token.UserId, req.TagID)
+	notes, err := s.db.GetUserNotes(req.Token.UserId, req.TagId)
 	if err != nil {
 		APIerror.Error(w, err)
 		return
@@ -275,7 +270,7 @@ func (s *Service) AddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := s.db.AddNote(req.Token.UserId, req.TagID, req.Note)
+	response, err := s.db.AddNote(req.Token.UserId, req.TagId, req.Note)
 	if err != nil {
 		APIerror.Error(w, err)
 		return
@@ -284,7 +279,7 @@ func (s *Service) AddNote(w http.ResponseWriter, r *http.Request) {
 	if err = json.NewEncoder(w).Encode(response); err != nil {
 		APIerror.Error(w, err)
 	} else {
-		log.Info("New note for userID: ", req.Token.UserId, " tagID: ", req.TagID, " was created")
+		log.Info("New note for userID: ", req.Token.UserId, " tagID: ", req.TagId, " was created")
 		w.WriteHeader(http.StatusOK)
 	}
 }

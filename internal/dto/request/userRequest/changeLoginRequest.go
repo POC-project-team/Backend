@@ -7,21 +7,18 @@ import (
 )
 
 type ChangeLoginRequest struct {
-	Login  string `json:"login"`
-	UserID uint
-	Token  string
+	Login string `json:"login"`
+	request.TokenRequest
 }
 
 func (clr *ChangeLoginRequest) Bind(r *http.Request) error {
 	if err := clr.Validate(); err != nil {
 		return err
 	}
-	token, err := request.ParseToken(r)
-	if err != nil {
+
+	if err := clr.ParseToken(r); err != nil {
 		return err
 	}
-
-	clr.UserID = token.UserId
 
 	return nil
 }
