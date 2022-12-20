@@ -4,15 +4,14 @@ import (
 	"backend/internal/dto/request"
 	"encoding/json"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 )
 
 type CreateNoteRequest struct {
-	Token request.Claims
-	TagID string
-	Note  string `json:"note"`
+	request.TagRequest
+	request.TokenRequest
+	Note string `json:"note"`
 }
 
 func (c *CreateNoteRequest) Bind(r *http.Request) error {
@@ -25,21 +24,21 @@ func (c *CreateNoteRequest) Bind(r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	c.TagID = mux.Vars(r)["tag_id"]
+	if err := c.ParseTagId(r); err != nil {
+		return err
+	}
+	if err = c.ParseToken(r); err != nil {
+		return err
+	}
 	if err := c.Validate(); err != nil {
 		return err
 	}
-	token, err := request.ParseToken(r)
-	if err != nil {
-		return err
-	}
-	c.Token = token
 	return nil
 }
 
 func (c *CreateNoteRequest) Validate() error {
 	return validation.ValidateStruct(c,
 		validation.Field(&c.Note, validation.Required),
-		validation.Field(&c.TagID, validation.Required),
+		validation.Field(&c.TagId, validation.Required),
 	)
 }

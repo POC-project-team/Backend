@@ -3,17 +3,14 @@ package tagRequest
 import (
 	"backend/internal/dto/request"
 	"encoding/json"
-	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 )
 
 type CreateUpdateTagRequest struct {
-	TagID   string `json:"tag_id"`
 	TagName string `json:"tagName"`
-	Token   request.Claims
+	request.BasicRequest
 }
 
 func (c *CreateUpdateTagRequest) Bind(r *http.Request) error {
@@ -27,21 +24,14 @@ func (c *CreateUpdateTagRequest) Bind(r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	if err := c.BindBasicRequest(r); err != nil {
+		return err
+	}
+
 	if err := c.Validate(); err != nil {
 		return err
 	}
-
-	tagId := mux.Vars(r)["tag_id"]
-	if tagId == "" {
-		return fmt.Errorf("tagId is required")
-	}
-	c.TagID = tagId
-
-	token, err := request.ParseToken(r)
-	if err != nil {
-		return err
-	}
-	c.Token = token
 
 	return nil
 }
