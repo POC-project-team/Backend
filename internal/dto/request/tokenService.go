@@ -1,7 +1,7 @@
 package request
 
 import (
-	"backend/internal/controller/rest/response"
+	"backend/domain"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
@@ -55,16 +55,16 @@ func ParseToken(r *http.Request) (Claims, error) {
 		})
 
 	if err != nil {
-		return Claims{}, errors.New(response.UserNotAuthorized)
+		return Claims{}, errors.New(domain.UserNotAuthorized)
 	}
 
 	if !token.Valid {
-		return Claims{}, errors.New(response.TokenNotValid)
+		return Claims{}, errors.New(domain.TokenNotValid)
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return Claims{}, errors.New(response.UserNotAuthorized)
+		return Claims{}, errors.New(domain.UserNotAuthorized)
 	}
 
 	return *claims, nil

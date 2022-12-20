@@ -1,9 +1,10 @@
 package postgres
 
 import (
-	"backend/internal/controller/rest/response"
+	"backend/domain"
 	"backend/internal/entity"
 	"errors"
+	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"time"
@@ -53,6 +54,14 @@ func (c *Client) GetUser(login, password string) (entity.User, error) {
 	return user, nil
 }
 
+func (c *Client) GetUserByLogin(login string) (entity.User, error) {
+	var user entity.User
+	if err := c.db.Where("login = ?", login).First(&user).Error; err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
 func (c *Client) GetAllUsers() ([]entity.User, error) {
 	var users []entity.User
 	if err := c.db.Find(&users).Error; err != nil {
@@ -66,7 +75,7 @@ func (c *Client) CreateUser(login, password string) (entity.User, error) {
 
 	// check if user with such login already exists
 	if err := c.db.Where("login = ?", login).First(&user).Error; err == nil {
-		return user, errors.New(response.UserAlreadyExists)
+		return user, errors.New(domain.UserAlreadyExists)
 	}
 
 	// create new user with unique id
@@ -132,7 +141,7 @@ func (c *Client) GetTag(userId uint, tagId string) (entity.Tag, error) {
 	var tag entity.Tag
 
 	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).First(&tag).Error; err != nil {
-		return entity.Tag{}, errors.New(response.NoSuchTag)
+		return entity.Tag{}, errors.New(domain.NoSuchTag)
 	}
 	return tag, nil
 }
@@ -147,7 +156,7 @@ func (c *Client) DeleteTag(userId uint, tagId string) error {
 func (c *Client) UpdateTag(userId uint, tagId, tagName string) (entity.Tag, error) {
 	var tag entity.Tag
 	if err := c.db.Model(&entity.Tag{}).Where("user_id = ? AND tag_id = ?", userId, tagId).Update("tag_name", tagName).Error; err != nil {
-		return tag, errors.New(response.NoSuchTag)
+		return tag, errors.New(domain.NoSuchTag)
 	}
 	return tag, nil
 }
@@ -156,7 +165,7 @@ func (c *Client) GetUserNotes(userId uint, tagId string) ([]entity.Note, error) 
 	// check the user
 	var user entity.User
 	if err := c.db.Where("user_id = ?", userId).First(&user).Error; err != nil {
-		return nil, errors.New(response.UserNotFound)
+		return nil, errors.New(domain.UserNotFound)
 	}
 	var notes []entity.Note
 	if err := c.db.Where("user_id = ? AND tag_id = ?", userId, tagId).Find(&notes).Error; err != nil {
@@ -168,7 +177,7 @@ func (c *Client) GetUserNotes(userId uint, tagId string) ([]entity.Note, error) 
 func (c *Client) TransferTag(userId uint, tagId, login string) error {
 	var user entity.User
 	if err := c.db.Where("login = ?", login).First(&user).Error; err != nil {
-		return errors.New(response.UserNotFound)
+		return errors.New(domain.UserNotFound)
 	}
 	if err := c.db.Model(&entity.Tag{}).Where("user_id = ? AND tag_id = ?", userId, tagId).Update("user_id", user.UserID).Error; err != nil {
 		return err
@@ -180,7 +189,8 @@ func (c *Client) AddNote(userId uint, tagId, noteInfo string) (entity.Tag, error
 	var tag entity.Tag
 
 	if err := c.db.Create(&entity.Note{UserId: userId, TagID: tagId, Note: noteInfo, Time: time.Now()}).Error; err != nil {
-		return tag, errors.New(response.NoSuchTag)
+		return tag, errors.New(domain.NoSuchTag)
 	}
+	fmt.Println(tag)
 	return tag, nil
 }

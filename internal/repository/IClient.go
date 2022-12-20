@@ -15,6 +15,7 @@ type IClient interface {
 	ChangePassword(userId uint, password string) error
 	ChangeLogin(userId uint, login string) error
 	DeleteUser(userId uint) error
+	GetUserByLogin(login string) (entity.User, error)
 
 	GetUserTags(userId uint) ([]entity.Tag, error)
 	CreateTag(userId uint, tag, tagName string) (entity.Tag, error)

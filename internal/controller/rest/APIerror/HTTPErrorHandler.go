@@ -1,7 +1,7 @@
 package APIerror
 
 import (
-	"backend/internal/controller/rest/response"
+	"backend/domain"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -30,32 +30,32 @@ func Error(w http.ResponseWriter, err error) {
 	log.Error(err)
 
 	switch err.Error() {
-	case response.UserAlreadyExists:
+	case domain.UserAlreadyExists:
 		HTTPError = HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
 		}
-	case response.UserNotFound:
+	case domain.UserNotFound:
 		HTTPError = HTTPErrorHandler{
 			ErrorCode:   http.StatusNotFound,
 			Description: err.Error(),
 		}
-	case response.UserNotAuthorized:
+	case domain.UserNotAuthorized:
 		HTTPError = HTTPErrorHandler{
 			ErrorCode:   http.StatusUnauthorized,
 			Description: err.Error(),
 		}
-	case response.WrongLoginOrPassword:
+	case domain.WrongLoginOrPassword:
 		HTTPError = HTTPErrorHandler{
 			ErrorCode:   http.StatusBadRequest,
 			Description: err.Error(),
 		}
-	case response.TokenNotValid:
+	case domain.TokenNotValid:
 		HTTPError = HTTPErrorHandler{
 			ErrorCode:   http.StatusUnauthorized,
 			Description: err.Error(),
 		}
-	case response.NoSuchTag:
+	case domain.NoSuchTag:
 		HTTPError = HTTPErrorHandler{
 			ErrorCode:   http.StatusNotFound,
 			Description: err.Error(),

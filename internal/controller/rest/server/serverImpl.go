@@ -28,7 +28,10 @@ func NewServer(database repository.IClient) *myServer {
 		},
 	}
 
-	myRouter.Handler = handlers.MyHandler(database)
+	//myRouter.Handler = handlers.MyHandler(database)
+	myHandler := handlers.NewHandler(database)
+	myHandler.Routes()
+	myRouter.Handler = myHandler.Router
 
 	return myRouter
 }

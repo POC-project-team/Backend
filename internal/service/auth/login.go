@@ -1,13 +1,10 @@
 package auth
 
 import (
-	"backend/internal/controller/rest/APIerror"
 	"backend/internal/dto/request"
-	"backend/internal/dto/request/userRequest"
+	"backend/internal/entity"
 	"backend/internal/repository"
-	"encoding/json"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type Service struct {
@@ -19,64 +16,38 @@ func NewAuthService(db repository.IClient) *Service {
 }
 
 // Auth generates the token for the user
-func (s *Service) Auth(w http.ResponseWriter, r *http.Request) {
-	var response userRequest.AuthRequest
-
-	if err := response.Bind(r); err != nil {
-		APIerror.Error(w, err)
-		return
-	}
-
-	user, err := s.db.GetUser(response.Login, response.Password)
+func (s *Service) Auth(newUser entity.User) (request.Token, error) {
+	user, err := s.db.GetUser(newUser.Login, newUser.Password)
 
 	if err != nil {
-		APIerror.Error(w, err)
-		return
+		return request.Token{}, err
 	}
 
 	answer, err := request.GenerateToken(user.UserID)
 	if err != nil {
-		APIerror.Error(w, err)
-		return
+		return request.Token{}, err
 	}
 
-	if err = json.NewEncoder(w).Encode(answer); err != nil {
-		APIerror.Error(w, err)
-	} else {
-		log.Info("New token was created for user ", user)
-		w.WriteHeader(http.StatusOK)
-	}
+	log.Info("New token was created for user ", user)
+
+	return answer, nil
 }
 
-func (s *Service) ChangeLogin(w http.ResponseWriter, r *http.Request) {
-	var response userRequest.ChangeLoginRequest
-
-	if err := response.Bind(r); err != nil {
-		APIerror.Error(w, err)
-		return
+func (s *Service) ChangeLogin(user entity.User) error {
+	if err := s.db.ChangeLogin(user.UserID, user.Login); err != nil {
+		return err
 	}
 
-	if err := s.db.ChangeLogin(response.Token.UserId, response.Login); err != nil {
-		APIerror.Error(w, err)
-		return
-	}
+	log.Info("Login was changed for user ", user.UserID)
 
-	log.Info("Login was changed for user ", response.Token.UserId)
-	w.WriteHeader(http.StatusOK)
+	return nil
 }
 
-func (s *Service) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	var response userRequest.ChangePasswdRequest
-
-	if response.Bind(r) != nil {
-		return
+func (s *Service) ChangePassword(user entity.User) error {
+	if err := s.db.ChangePassword(user.UserID, user.Password); err != nil {
+		return err
 	}
 
-	if err := s.db.ChangePassword(response.UserID, response.Password); err != nil {
-		APIerror.Error(w, err)
-		return
-	}
-
-	log.Info("Password was changed for user ", response.UserID)
-	w.WriteHeader(http.StatusCreated)
+	log.Info("Password was changed for user ", user.UserID)
+	return nil
 }

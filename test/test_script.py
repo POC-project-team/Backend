@@ -24,21 +24,35 @@ def main():
 
         create_link = f"{url}{token.json()['token']}/{tag_name}/tag"
         create = r.post(url=create_link, json={'tagName': "test"})
+
+        create_link = f"{url}{token.json()['token']}/{tag_name}test/tag"
+        create = r.post(url=create_link, json={'tagName': "testtest"})
+
+        create_link = f"{url}{token.json()['token']}/{tag_name}test2/tag"
+        create = r.post(url=create_link, json={'tagName': "testtest2"})
         print(f"Just created tag: {create.json()}")
 
         # get all tags from the user
         create_link = f"{url}{token.json()['token']}/tags"
         tags = r.get(url=create_link).json()
-        print(f"all tags from the user: {tags}")
+        print(f"all tags from the user")
+        for tag in tags:
+            print(tag)
 
         add_note = f"{url}{token.json()['token']}/{tag_name}/note"
         r.post(url=add_note, json={'note': "test"})
         r.post(url=add_note, json={'note': "test123"})
         r.post(url=add_note, json={'note': login})
+        r.post(url=add_note, json={'note': login})
+        r.post(url=add_note, json={'note': login})
+        r.post(url=add_note, json={'note': login})
 
         # # get notes
         notes = r.get(url=f"{url}{token.json()['token']}/{tag_name}/notes").json()
-        print(f"All notes from the user {notes}")
+        # print notes as json (with paddings)
+        print(f"All notes from the user")
+        for note in notes:
+            print(note)
 
     print("Use-case has been successfully completed")
         
